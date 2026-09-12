@@ -1,4 +1,3 @@
-Location: README.md
 
 ```markdown
 # offline-vault
