@@ -1,0 +1,82 @@
+[package]
+name = "offline-vault"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.76"
+description = "Offline, local-only password manager written in Rust with AES-256-GCM and Argon2id."
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+publish = false
+
+[dependencies]
+# --- Cryptography (security-critical) ---------------------------------------
+# AES-256-GCM AEAD from the RustCrypto project. Used for wrapping the vault key
+# and encrypting the vault payload. Never reimplemented by hand.
+aes-gcm = { version = "0.10", features = ["aes", "alloc"] }
+
+# Argon2id password-based KDF (RustCrypto). Used exactly per the vault spec:
+# time_cost=3, memory_cost=65536, parallelism=1, hash_len=32.
+argon2 = { version = "0.5", features = ["alloc"] }
+
+# HKDF-SHA256 for deriving the KEK from the master key.
+hkdf = "0.12"
+sha2 = "0.10"
+
+# Cryptographically secure randomness: OS RNG for salts, nonces, vault key,
+# and generated passwords.
+rand_core = { version = "0.6", features = ["getrandom"] }
+getrandom = "0.2"
+
+# Constant-time comparison for auth tags / clipboard matching.
+subtle = "2.5"
+
+# Zeroization of sensitive buffers on drop. The `alloc` feature provides
+# `Zeroizing<Vec<u8>>`, used to wipe serialized plaintext during sealing and
+# unsealing. The `serde` feature is deliberately NOT enabled: we do not
+# serialize any `Zeroizing<T>` value directly.
+zeroize = { version = "1.7", features = ["derive", "alloc"] }
+
+# --- Serialization / encoding -----------------------------------------------
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+base64 = "0.22"
+
+# --- GUI --------------------------------------------------------------------
+# eframe/egui: native, cross-platform, no web runtime, no Node.js, no browser.
+eframe = { version = "0.27", default-features = false, features = ["default_fonts", "glow", "persistence"] }
+egui = "0.27"
+
+# --- Clipboard --------------------------------------------------------------
+# arboard is a pure-Rust cross-platform clipboard library. No shelling out.
+arboard = { version = "3.4", default-features = false }
+
+# --- Errors -----------------------------------------------------------------
+thiserror = "1.0"
+
+[target.'cfg(unix)'.dependencies]
+# libc for mlock / munlock / fsync on Unix-like platforms.
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+# winapi for VirtualLock / VirtualUnlock on Windows.
+winapi = { version = "0.3", features = ["memoryapi", "winnt"] }
+
+[dev-dependencies]
+tempfile = "3.10"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+debug = false
+overflow-checks = true
+
+[profile.dev]
+opt-level = 1
+debug = true
+overflow-checks = true
+
+[profile.test]
+opt-level = 1
