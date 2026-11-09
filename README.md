@@ -1,5 +1,4 @@
 
-```markdown
 # offline-vault
 
 A local, offline-only password manager written entirely in Rust.
